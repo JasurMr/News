@@ -24,10 +24,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>vk7001833</string>
+			<string>vk7124233</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>vk7001833</string>
+				<string>vk7124233</string>
 			</array>
 		</dict>
 	</array>
@@ -43,8 +43,6 @@
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>
