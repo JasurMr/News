@@ -17,8 +17,8 @@ protocol NewsfeedDisplayLogic: class
     func displayData(viewModel: Newsfeed.Model.ViewModel.viewModelData)
 }
 
-class NewsfeedViewController: UIViewController, NewsfeedDisplayLogic
-{
+class NewsfeedViewController: UIViewController, NewsfeedDisplayLogic, NewsFeedCodeCellDelegate {
+    
     var interactor: NewsfeedBusinessLogic?
     var router: (NSObjectProtocol & NewsfeedRoutingLogic & NewsfeedDataPassing)?
     
@@ -85,6 +85,12 @@ class NewsfeedViewController: UIViewController, NewsfeedDisplayLogic
             tableView.reloadData()
         }
     }
+    
+    func revealPost(for cell: NewsfeedCodeCell) {
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        let viewModel = feedViewModel.cells[indexPath.row]
+        interactor?.makeRequest(request: Newsfeed.Model.Request.RequestType.revealPostIds(postId: viewModel.postId))
+    }
 }
 
 extension NewsfeedViewController: UITableViewDelegate, UITableViewDataSource {
@@ -96,10 +102,15 @@ extension NewsfeedViewController: UITableViewDelegate, UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: NewsfeedCodeCell.reuseIdentifier, for: indexPath) as! NewsfeedCodeCell
         let cellViewModel = feedViewModel.cells[indexPath.row]
         cell.set(viewModel: cellViewModel)
+        cell.delegate = self
         return cell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return feedViewModel.cells[indexPath.row].feedCellSizes.totalHieght
+    }
+    
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         return feedViewModel.cells[indexPath.row].feedCellSizes.totalHieght
     }
 }

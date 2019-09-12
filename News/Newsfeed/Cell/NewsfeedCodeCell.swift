@@ -8,7 +8,13 @@
 
 import UIKit
 
-class NewsfeedCodeCell: UITableViewCell {
+protocol NewsFeedCodeCellDelegate: class {
+    func revealPost(for cell: NewsfeedCodeCell)
+}
+
+final class NewsfeedCodeCell: UITableViewCell {
+    
+    weak var delegate: NewsFeedCodeCellDelegate?
     
     let cardView: UIView = {
         let view = UIView()
@@ -30,6 +36,18 @@ class NewsfeedCodeCell: UITableViewCell {
         label.textColor = #colorLiteral(red: 0.1728, green: 0.1764, blue: 0.18, alpha: 1)
         return label
     }()
+    
+    let moreTextButton: UIButton = {
+       let button = UIButton()
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .medium)
+        button.setTitleColor(#colorLiteral(red: 0.4, green: 0.6235294118, blue: 0.831372549, alpha: 1), for: .normal)
+        button.contentHorizontalAlignment = .left
+        button.contentVerticalAlignment = .center
+        button.setTitle("Sell all...", for: .normal)
+        return button
+    }()
+    
+    let galleryCollectionView = GalleryCollectionView()
     
     let postImageView: WebImageView = {
         let imageView = WebImageView()
@@ -65,6 +83,8 @@ class NewsfeedCodeCell: UITableViewCell {
         return label
     }()
     
+    //MARK: views in bottonView
+    
     let likesView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -88,6 +108,8 @@ class NewsfeedCodeCell: UITableViewCell {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
+    
+    // MARK: Images in bottomViewViews
     
     let likesImage: UIImageView = {
         let imageView = UIImageView()
@@ -117,6 +139,8 @@ class NewsfeedCodeCell: UITableViewCell {
         return imageView
     }()
     
+    // MARK: Labels in bottomViewViews
+
     let likesLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -153,15 +177,32 @@ class NewsfeedCodeCell: UITableViewCell {
         return label
     }()
     
+    // MARK: init
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
-        backgroundColor = #colorLiteral(red: 0.501960814, green: 0.501960814, blue: 0.501960814, alpha: 1)
+        iconImageView.layer.cornerRadius = Constaints.topViewHieght / 2
+        iconImageView.clipsToBounds = true
+        
+        backgroundColor = .clear
+        selectionStyle = .none
+        
+        cardView.layer.cornerRadius = 10
+        cardView.clipsToBounds = true
+        
+        moreTextButton.addTarget(self, action: #selector(moreTextButtonTouch), for: .touchUpInside)
+        
         overlayFirstLayer()
         overlaySecondLayer()
         overlayThirdLayerOnTopView()
         overlayThirdLayerOnBottomView()
         overlayFourthLayerOnBottomViewViews()
+    }
+    
+    override func prepareForReuse() {
+        iconImageView.set(imageUrl: nil)
+        postImageView.set(imageUrl: nil)
     }
     
     func set(viewModel: FeedCellViewModel) {
@@ -175,15 +216,29 @@ class NewsfeedCodeCell: UITableViewCell {
         viewsLabel.text = viewModel.views
         
         postLabel.frame = viewModel.feedCellSizes.postLabelFrame
-        postImageView.frame = viewModel.feedCellSizes.attachmentFrame
         bottomView.frame = viewModel.feedCellSizes.bottomViewFrame
+        moreTextButton.frame = viewModel.feedCellSizes.moreTextButtonFrame
+
         
-        if let photoAttachment = viewModel.photoAttachment {
-             postImageView.set(imageUrl: photoAttachment.photoUrlString)
+        if let photoAttachment = viewModel.photoAttachments.first, viewModel.photoAttachments.count == 1 {
+            postImageView.set(imageUrl: photoAttachment.photoUrlString)
             postImageView.isHidden = false
-        } else {
+            galleryCollectionView.isHidden = true
+            postImageView.frame = viewModel.feedCellSizes.attachmentFrame
+        } else if viewModel.photoAttachments.count > 1 {
             postImageView.isHidden = true
+            galleryCollectionView.isHidden = false
+            galleryCollectionView.set(photos: viewModel.photoAttachments)
+            galleryCollectionView.frame = viewModel.feedCellSizes.attachmentFrame
+        } else {
+            
+            postImageView.isHidden = true
+            galleryCollectionView.isHidden = true
         }
+    }
+    
+    @objc private func moreTextButtonTouch() {
+        delegate?.revealPost(for: self)
     }
     
     private func overlayFourthLayerOnBottomViewViews() {
@@ -246,7 +301,9 @@ class NewsfeedCodeCell: UITableViewCell {
     private func overlaySecondLayer() {
         cardView.addSubview(topView)
         cardView.addSubview(postLabel)
+        cardView.addSubview(moreTextButton)
         cardView.addSubview(postImageView)
+        cardView.addSubview(galleryCollectionView)
         cardView.addSubview(bottomView)
         
         topView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 8).isActive = true
@@ -254,6 +311,11 @@ class NewsfeedCodeCell: UITableViewCell {
         topView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 8).isActive = true
         topView.heightAnchor.constraint(equalToConstant: Constaints.topViewHieght).isActive = true
         
+    }
+    
+    private func overlayFirstLayer() {
+        addSubview(cardView)
+        cardView.fillSuperView(padding: Constaints.cardInsets)
     }
     
     private func commonConstraints(view: UIView, constraint: NSLayoutXAxisAnchor) {
@@ -274,11 +336,6 @@ class NewsfeedCodeCell: UITableViewCell {
         label.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
         label.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 4).isActive = true
         label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 4).isActive = true
-    }
-    
-    private func overlayFirstLayer() {
-        addSubview(cardView)
-        cardView.fillSuperView(padding: Constaints.cardInsets)
     }
     
     required init?(coder aDecoder: NSCoder) {
